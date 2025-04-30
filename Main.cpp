@@ -22,15 +22,31 @@
 
 #include "Resources/Objects/cube.h"
 
-int width = 1280;
-int height = 720;
-float scale = 0.25f;
+/*
+*  KeyBinds:
+*   f3 -> toggle show chunk border
+*   f4 -> toggle camera mode (click or immersive)
+*/
 
-float deltaTime = 0.0f;
-float lastTime = 0.0f;
+namespace {
+    int width = 1280;
+    int height = 720;
+    float scale = 0.25f;
 
-double lastFPSTime = 0.0;
-int nbFrames = 0;
+    float deltaTime = 0.0f;
+    float lastTime = 0.0f;
+
+    double lastFPSTime = 0.0;
+    int nbFrames = 0;
+
+    bool ShowChunkBorder = false;
+    bool f3Pressed = false;
+
+    const int renderDistance = 8; // means player on current chunk +x chunk ard him
+    const int dirtHeight = 10;
+    const float effectiveRadius = renderDistance + 0.5f; // idk why adding 0.5f makes it a normal circle lmao
+    const float squareness = 1.2f;  // > 1 makes corners rounder, <= 1 makes more square
+}
 
 int main()
 {
@@ -58,15 +74,12 @@ int main()
 
     glViewport(0, 0, width, height);
 
-    Texture textures[]
-    {
-        Texture("../Resources/Textures/grassAtlas2.png", "diffuse", 0, GL_RGBA, GL_UNSIGNED_BYTE),
-    };
+    std::vector<Texture> textures;
+    textures.emplace_back("../Resources/Textures/grassAtlas2.png", "diffuse", 0, GL_RGBA, GL_UNSIGNED_BYTE);
 
     Shader shaderProgram("../Resources/Shaders/default.vert", "../Resources/Shaders/default.frag");
-    std::vector <Texture> tex(textures, textures + sizeof(textures) / sizeof(Texture));
     Shader lightShader("../Resources/Shaders/light.vert", "../Resources/Shaders/light.frag");
-    Mesh light(lightVertices, lightIndices, tex);
+    Mesh light(lightVertices, lightIndices, textures);
 
     glm::vec4 lightColor = glm::vec4(1.f, 1.f, 1.f, 1.f);
     glm::vec3 lightPos = glm::vec3(10.f, 10.f, 10.f);
@@ -83,11 +96,15 @@ int main()
 
     GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale");
 
-    Chunk chunk(10); // fyi: 10 here is where dirt stops and air continues NOT chunk size ( if wan change chunk size go chunk.h )
-    chunk.GenerateChunk();
-    chunk.BuildChunkMesh(textures[0]);
+    ChunkManager chunkMgr;
 
-    while (!glfwWindowShouldClose(window))
+    for (int z = -renderDistance; z <= renderDistance; ++z)
+        for (int x = -renderDistance; x <= renderDistance; ++x)
+            if ((x * x + z * z) <= (effectiveRadius * effectiveRadius) / squareness)
+                chunkMgr.initChunk(textures[0], x, z, dirtHeight);
+
+
+    while (!glfwWindowShouldClose(window)) // start of game loop
     {
         float currentTime = static_cast<float>(glfwGetTime());
         deltaTime = currentTime - lastTime;
@@ -106,14 +123,16 @@ int main()
             lastFPSTime = currentTime;
         }
 
-        processInput(window, scale);
+        processInput(window, scale, ShowChunkBorder, f3Pressed);
 
         glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
         //glClearColor(0.07f, 0.13f, 0.17f, 1.0f); // dark gloomy black
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // uncomment to enable wireframe mode
+
         camera.Inputs(window, deltaTime);
-        camera.updateMatrix(45.0f, 0.1f, 100.0f);
+        camera.updateMatrix(45.0f, 0.1f, 500.0f);
 
         lightShader.Activate();
         glUniformMatrix4fv(glGetUniformLocation(lightShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(lightModel));
@@ -121,24 +140,29 @@ int main()
 
         shaderProgram.Activate();
 
-        //for (int i = 0; i < CHUNK_SIZE_X; ++i)
-        //{
-            glm::mat4 dirtModel = glm::mat4(1.0f);
-            //dirtModel = glm::translate(dirtModel, future chunk position);
-            glUniformMatrix4fv(glGetUniformLocation(shaderProgram.ID, "model"), 1, GL_FALSE, glm::value_ptr(dirtModel));
+        for (const auto& pair : chunkMgr.getChunks()) {
+            ChunkCoord coord = pair.first;
+            Chunk chunk = pair.second;
+
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(coord.x * WIDTH * scale, 0.0f, coord.z * DEPTH * scale)); // position in world
+
+            glUniformMatrix4fv(glGetUniformLocation(shaderProgram.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
             glUniform4f(glGetUniformLocation(shaderProgram.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
             glUniform3f(glGetUniformLocation(shaderProgram.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
-
             glUniform1f(uniID, scale);
-            (chunk.chunkMesh).Draw(shaderProgram, camera);
-        //}
 
+            chunk.chunkMesh.Draw(shaderProgram, camera);
+            
+            if(ShowChunkBorder)
+                DrawChunkBorder(glm::vec3(coord.x * WIDTH, 0, coord.z * DEPTH), WIDTH, HEIGHT, DEPTH, camera, shaderProgram);
+        }
 
         light.Draw(lightShader, camera);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
-    }
+    } // end of game loop
 
     shaderProgram.Delete();
     lightShader.Delete();

@@ -25,46 +25,58 @@ void Camera::Matrix(Shader& shader, const char* uniform)
 
 void Camera::Inputs(GLFWwindow* window, float dt)
 {
-	float camSpeed = speed * 2.5f * dt;
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) Position += camSpeed * Orientation;
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) Position += camSpeed * -glm::normalize(glm::cross(Orientation, Up));
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) Position += camSpeed * -Orientation;
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) Position += camSpeed * glm::normalize(glm::cross(Orientation, Up));
-	
-	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) Position += camSpeed * Up;
-	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) Position += camSpeed * -Up;
-	
-	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) speed = 4.f;
-	else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE) speed = 1.f;
-	
-	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-	{
-		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    float camSpeed = speed * 10.f * dt;
 
-		if (firstClick) // prevents jumping
-		{
-			glfwSetCursorPos(window, (width / 2), (height / 2));
-			firstClick = false;
-		}
+    // Toggle camera mode on F4 
+    if (glfwGetKey(window, GLFW_KEY_F4) == GLFW_PRESS && !f4PressedLastFrame)
+    {
+        cameraControlActive = !cameraControlActive;
+        f4PressedLastFrame = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_F4) == GLFW_RELEASE)
+    {
+        f4PressedLastFrame = false;
+    }
 
-		double mouseX, mouseY;
-		glfwGetCursorPos(window, &mouseX, &mouseY);
+    // Movement control
+    if (cameraControlActive || glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+    {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
-		float rotX = sensitivity * (float)(mouseY - (height / 2)) / height;
-		float rotY = sensitivity * (float)(mouseX - (width / 2)) / width;
+        if (firstClick)
+        {
+            glfwSetCursorPos(window, width / 2, height / 2);
+            firstClick = false;
+        }
 
-		glm::vec3 newOrientation = glm::rotate(Orientation, glm::radians(-rotX), glm::normalize(glm::cross(Orientation, Up)));
+        double mouseX, mouseY;
+        glfwGetCursorPos(window, &mouseX, &mouseY);
 
-		if (abs(glm::angle(newOrientation, Up) - glm::radians(90.0f)) <= glm::radians(85.0f)) 
-			Orientation = newOrientation;
+        float rotX = sensitivity * (float)(mouseY - height / 2) / height;
+        float rotY = sensitivity * (float)(mouseX - width / 2) / width;
 
-		Orientation = glm::rotate(Orientation, glm::radians(-rotY), Up);
+        glm::vec3 newOrientation = glm::rotate(Orientation, glm::radians(-rotX), glm::normalize(glm::cross(Orientation, Up)));
+        if (abs(glm::angle(newOrientation, Up) - glm::radians(90.0f)) <= glm::radians(85.0f))
+            Orientation = newOrientation;
 
-		glfwSetCursorPos(window, (width / 2), (height / 2));
-	}
-	else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
-	{
-		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-		firstClick = true;
-	}
+        Orientation = glm::rotate(Orientation, glm::radians(-rotY), Up);
+        glfwSetCursorPos(window, width / 2, height / 2);
+
+        // Movement
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) Position += camSpeed * Orientation;
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) Position += camSpeed * -glm::normalize(glm::cross(Orientation, Up));
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) Position += camSpeed * -Orientation;
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) Position += camSpeed * glm::normalize(glm::cross(Orientation, Up));
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) Position += camSpeed * Up;
+        if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) Position += camSpeed * -Up;
+    }
+    else
+    {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        firstClick = true;
+    }
+
+    // Speed boost
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) speed = 3.f; // basically 3X the normal speed
+    else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE) speed = 1.f;
 }

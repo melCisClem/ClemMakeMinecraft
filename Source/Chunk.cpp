@@ -1,37 +1,39 @@
 #include "../Headers/Chunk.h"
 
 
-Chunk::Chunk(int Dirt_StopY) : Dirt_StopY{ Dirt_StopY } {};
+Chunk::Chunk(int Dirt_StopY) : Dirt_StopY{ Dirt_StopY } 
+{
+    for (int x = 0; x < WIDTH; x++)
+        for (int y = 0; y < HEIGHT; y++)
+            for (int z = 0; z < DEPTH; z++)
+            {
+                int index = x + WIDTH * (y + DEPTH * z);
+                if (y < Dirt_StopY - 1)
+                    chunk[index] = Dirt;
+                else if (y == Dirt_StopY - 1)
+                    chunk[index] = Grass;
+                else
+                    chunk[index] = Air;
+            }
+}
 
 Chunk::~Chunk() {};
 
-void Chunk::GenerateChunk()
+BlockType Chunk::getBlock(int x, int y, int z) const 
 {
-    for (int x = 0; x < CHUNK_SIZE_X; x++)
-    {
-        for (int z = 0; z < CHUNK_SIZE_Z; z++)
-        {
-            // int height = GetHeight(x, z);
-            int h = Dirt_StopY;
+    return chunk[x + WIDTH * (y + HEIGHT * z)];
+}
 
-            for (int y = 0; y < CHUNK_SIZE_Y; y++)
-            {
-                if (y > h)
-                    chunk[x][y][z] = Air;
-                else if (y == h)
-                    chunk[x][y][z] = Grass;
-                else
-                    chunk[x][y][z] = Dirt;
-            }
-        }
-    }
+void Chunk::setBlock(int x, int y, int z, BlockType type) 
+{
+    chunk[x + WIDTH * (y + HEIGHT * z)] = type;
 }
 
 bool Chunk::isAir(int x, int y, int z)
 {
-    if (x < 0 || y < 0 || z < 0 || x >= CHUNK_SIZE_X || y >= CHUNK_SIZE_Y || z >= CHUNK_SIZE_Z)
+    if (x < 0 || y < 0 || z < 0 || x >= WIDTH || y >= HEIGHT || z >= DEPTH)
         return true;
-    return chunk[x][y][z] == Air;
+    return chunk[x + WIDTH * (y + DEPTH * z)] == Air;
 }
 
 glm::vec2 Chunk::GetUV(BlockType type, int face, int cornerX, int cornerY)
@@ -117,11 +119,12 @@ void Chunk::BuildChunkMesh(Texture& atlasTexture)
     glm::vec3 topFace[] = { {0,1,1}, {0,1,0}, {1,1,0}, {1,1,1} };
     glm::vec3 bottomFace[] = { {0,0,0}, {0,0,1}, {1,0,1}, {1,0,0} };
 
-    for (int x = 0; x < CHUNK_SIZE_X; x++)
-        for (int y = 0; y < CHUNK_SIZE_Y; y++)
-            for (int z = 0; z < CHUNK_SIZE_Z; z++)
+    for (int x = 0; x < WIDTH; x++)
+        for (int y = 0; y < HEIGHT; y++)
+            for (int z = 0; z < DEPTH; z++)
             {
-                BlockType type = chunk[x][y][z];
+                int index = x + WIDTH * (y + HEIGHT * z);
+                BlockType type = chunk[index];
                 if (type == Air) continue;
 
                 BlockType visibleType = type;
@@ -143,3 +146,24 @@ void Chunk::BuildChunkMesh(Texture& atlasTexture)
     std::vector<Texture> textures = { atlasTexture };
     chunkMesh = Mesh(verts, inds, textures);
 }
+
+
+ChunkManager::ChunkManager() { chunks.reserve(16); }
+
+ChunkManager::ChunkManager(int renderDist) { chunks.reserve(renderDist); };
+
+ChunkManager::~ChunkManager() {};
+
+void ChunkManager::initChunk(Texture& tex, int chunkX, int chunkZ, int Dirt_StopY) {
+    ChunkCoord coord{ chunkX, chunkZ };
+
+    // Prevent overwriting existing chunks
+    if (chunks.find(coord) != chunks.end()) return;
+
+    Chunk chunk(Dirt_StopY);
+    chunk.BuildChunkMesh(tex);
+    chunks.emplace(coord, std::move(chunk));
+}
+
+const std::unordered_map<ChunkCoord, Chunk>& ChunkManager::getChunks() const { return chunks; }
+
