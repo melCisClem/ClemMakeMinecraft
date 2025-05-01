@@ -10,6 +10,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "Headers/globals.h"
 #include "Headers/Texture.h"
 #include "Headers/ShaderClass.h"
 #include "Headers/VAO.h"
@@ -24,29 +25,10 @@
 
 /*
 *  KeyBinds:
-*   f3 -> toggle show chunk border
-*   f4 -> toggle camera mode (click or immersive)
+*   f3  -> toggle show chunk border
+*   f4  -> toggle camera mode (click or immersive)
+*   f11 -> toggle fullscreen (forces immersive camera mode)
 */
-
-namespace {
-    int width = 1280;
-    int height = 720;
-    float scale = 0.25f;
-
-    float deltaTime = 0.0f;
-    float lastTime = 0.0f;
-
-    double lastFPSTime = 0.0;
-    int nbFrames = 0;
-
-    bool ShowChunkBorder = false;
-    bool f3Pressed = false;
-
-    const int renderDistance = 16; // means player on current chunk +x chunk ard him
-    const int dirtHeight = 10;
-    const float effectiveRadius = renderDistance + 0.5f; // idk why adding 0.5f makes it a normal circle lmao
-    const float squareness = 1.2f;  // > 1 makes corners rounder, <= 1 makes more square
-}
 
 int main()
 {
@@ -55,7 +37,15 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(width, height, "ClemTest", NULL, NULL);
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+    GLFWwindow* window;
+    if (global::fullscreen)
+        window = glfwCreateWindow(mode->width, mode->height, "ClemTest", monitor, NULL);
+    else
+        window = glfwCreateWindow(global::width, global::height, "ClemTest", NULL, NULL);
+
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -72,7 +62,7 @@ int main()
     }
     gladLoadGL();
 
-    glViewport(0, 0, width, height); // world
+    glViewport(0, 0, global::width, global::height); // world
 
     std::vector<Texture> textures;
     textures.emplace_back("../Resources/Textures/grassAtlas2.png", "diffuse", 0, GL_RGBA, GL_UNSIGNED_BYTE);
@@ -92,38 +82,39 @@ int main()
     glFrontFace(GL_CW);
     glCullFace(GL_BACK);
 
-    Camera camera(width, height, glm::vec3(8.0f, 8.0f, 30.0f));
+    Camera camera(global::width, global::height, glm::vec3(8.0f, 8.0f, 30.0f));
 
     GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale");
 
     ChunkManager chunkMgr;
 
-    for (int z = -renderDistance; z <= renderDistance; ++z)
-        for (int x = -renderDistance; x <= renderDistance; ++x)
-            if ((x * x + z * z) <= (effectiveRadius * effectiveRadius) / squareness)
-                chunkMgr.initChunk(textures[0], x, z, dirtHeight);
+    for (int z = -global::renderDistance; z <= global::renderDistance; ++z)
+        for (int x = -global::renderDistance; x <= global::renderDistance; ++x)
+            if ((x * x + z * z) <= (global::effectiveRadius * global::effectiveRadius) / global::squareness)
+                chunkMgr.initChunk(textures[0], x, z);
 
 
     while (!glfwWindowShouldClose(window)) // start of game loop
     {
         float currentTime = static_cast<float>(glfwGetTime());
-        deltaTime = currentTime - lastTime;
-        lastTime = currentTime;
+        global::deltaTime = currentTime - global::lastTime;
+        global::lastTime = currentTime;
 
-        nbFrames++;
-        if (currentTime - lastFPSTime >= 1.0) // If more than 1 second has passed
+        global::nbFrames++;
+        if (currentTime - global::lastFPSTime >= 1.0) // If more than 1 second has passed
         {
-            double fps = double(nbFrames);
+            double fps = double(global::nbFrames);
             double frameTime = 1000.0 / fps;
 
             std::string title = "ClemTest - FPS: " + std::to_string(int(fps)) + " - Frame Time: " + std::to_string(frameTime).substr(0, 5) + " ms";
             glfwSetWindowTitle(window, title.c_str());
 
-            nbFrames = 0;
-            lastFPSTime = currentTime;
+            global::nbFrames = 0;
+            global::lastFPSTime = currentTime;
         }
 
-        processInput(window, scale, ShowChunkBorder, f3Pressed);
+        processInput(window);
+        toggleFullscreen(window);
 
         glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
         //glClearColor(0.07f, 0.13f, 0.17f, 1.0f); // dark gloomy black
@@ -131,7 +122,7 @@ int main()
 
         //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // uncomment to enable wireframe mode
 
-        camera.Inputs(window, deltaTime);
+        camera.Inputs(window);
         camera.updateMatrix(45.0f, 0.1f, 500.0f);
 
         lightShader.Activate();
@@ -145,13 +136,14 @@ int main()
         int renderedchunks = 0;
         int totalchunks = 0;
 
-        for (const auto& pair : chunkMgr.getChunks()) { // somehow auto here gives me more fps
+        // std::pair<ChunkCoord, Chunk> gives 120-130 auto gives 170-190 at RenderDist 8
+        for (const auto& pair : chunkMgr.getChunks()) { // somehow auto here gives me more fps idk
             ChunkCoord coord = pair.first;
             Chunk chunk = pair.second;
 
-            glm::vec3 worldPos = glm::vec3(coord.x * WIDTH * scale, 0.0f, coord.z * DEPTH * scale);
+            glm::vec3 worldPos = glm::vec3(coord.x * WIDTH * global::scale, 0.0f, coord.z * DEPTH * global::scale);
             glm::vec3 aabbMin = worldPos;
-            glm::vec3 aabbMax = worldPos + glm::vec3(WIDTH * scale, HEIGHT * scale, DEPTH * scale);
+            glm::vec3 aabbMax = worldPos + glm::vec3(WIDTH * global::scale, HEIGHT * global::scale, DEPTH * global::scale);
 
             totalchunks++;
 
@@ -165,11 +157,11 @@ int main()
             glUniformMatrix4fv(glGetUniformLocation(shaderProgram.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
             glUniform4f(glGetUniformLocation(shaderProgram.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
             glUniform3f(glGetUniformLocation(shaderProgram.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
-            glUniform1f(uniID, scale);
+            glUniform1f(uniID, global::scale);
 
             chunk.chunkMesh.Draw(shaderProgram, camera);
             
-            if(ShowChunkBorder)
+            if(global::ShowChunkBorder)
                 DrawChunkBorder(WIDTH, HEIGHT, DEPTH);
         }
         std::cout << "Rendered: " << renderedchunks << " / " << totalchunks << " chunks" << std::endl;

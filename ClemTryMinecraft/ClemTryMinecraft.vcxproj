@@ -16,9 +16,11 @@
     <ClCompile Include="..\Source\Camera.cpp" />
     <ClCompile Include="..\Source\Chunk.cpp" />
     <ClCompile Include="..\Source\EBO.cpp" />
+    <ClCompile Include="..\Source\globals.cpp" />
     <ClCompile Include="..\Source\Mesh.cpp" />
     <ClCompile Include="..\Source\ShaderCLass.cpp" />
     <ClCompile Include="..\Source\stb.cpp" />
+    <ClCompile Include="..\Source\stb_perlin.cpp" />
     <ClCompile Include="..\Source\Texture.cpp" />
     <ClCompile Include="..\Source\utils.cpp" />
     <ClCompile Include="..\Source\VAO.cpp" />
@@ -28,12 +30,14 @@
     <ClInclude Include="..\Headers\Camera.h" />
     <ClInclude Include="..\Headers\Chunk.h" />
     <ClInclude Include="..\Headers\EBO.h" />
+    <ClInclude Include="..\Headers\globals.h" />
     <ClInclude Include="..\Headers\Mesh.h" />
     <ClInclude Include="..\Headers\ShaderClass.h" />
     <ClInclude Include="..\Headers\Texture.h" />
     <ClInclude Include="..\Headers\utils.h" />
     <ClInclude Include="..\Headers\VAO.h" />
     <ClInclude Include="..\Headers\VBO.h" />
+    <ClInclude Include="..\Libraries\include\stb\stb_perlin.h" />
     <ClInclude Include="..\Resources\Objects\cube.h" />
   </ItemGroup>
   <ItemGroup>

@@ -6,24 +6,51 @@ void framebuffer_size_callback(GLFWwindow* window, int inner_width, int inner_he
     glViewport(0, 0, inner_width, inner_height);
 }
 
-void processInput(GLFWwindow* window, float& inner_scale, bool& ShowChunkBorder, bool& f3Pressed)
+void processInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
     if (glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS) // +
-        inner_scale += 0.001f;
-    if (glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS && inner_scale > 0.f) // -
-        inner_scale -= 0.001f;
+        global::scale += 0.001f;
+    if (glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS && global::scale > 0.f) // -
+        global::scale -= 0.001f;
      
     if (glfwGetKey(window, GLFW_KEY_F3) == GLFW_PRESS) {
-        if (!f3Pressed) {
-            ShowChunkBorder = !ShowChunkBorder;
-            f3Pressed = true;
+        if (!global::f3Pressed) {
+            global::ShowChunkBorder = !global::ShowChunkBorder;
+            global::f3Pressed = true;
         }
     }
     else {
-        f3Pressed = false;
+        global::f3Pressed = false;
+    }
+}
+
+void toggleFullscreen(GLFWwindow* window)
+{
+    if (glfwGetKey(window, GLFW_KEY_F11) == GLFW_PRESS) {
+        if (!global::f11Pressed) {
+            global::fullscreen = !global::fullscreen;
+            global::f11Pressed = true;
+
+            GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+            const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+            if (global::fullscreen) {
+                // Save current window position and size before switching
+                glfwGetWindowPos(window, &global::windowed_x, &global::windowed_y);
+                glfwGetWindowSize(window, &global::windowed_width, &global::windowed_height);
+
+                glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+            }
+            else {
+                glfwSetWindowMonitor(window, nullptr, global::windowed_x, global::windowed_y, global::windowed_width, global::windowed_height, 0);
+            }
+        }
+    }
+    else {
+        global::f11Pressed = false;
     }
 }
 

@@ -11,6 +11,7 @@
 #include<glm/gtx/rotate_vector.hpp>
 #include<glm/gtx/vector_angle.hpp>
 
+#include"../Headers/globals.h"
 #include"shaderClass.h"
 #include<array>
 
@@ -37,7 +38,7 @@ public:
 	void updateMatrix(float FOVdeg, float nearPlane, float farPlane);
 	void Matrix(Shader& shader, const char* uniform);
 
-	void Inputs(GLFWwindow* window, float dt);
+	void Inputs(GLFWwindow* window);
 	std::array<glm::vec4, 6> getFrustumPlanes() const;
 };
 #endif

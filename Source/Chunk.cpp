@@ -1,20 +1,34 @@
 #include "../Headers/Chunk.h"
 
 
-Chunk::Chunk(int Dirt_StopY) : Dirt_StopY{ Dirt_StopY } 
+Chunk::Chunk(int chunkX, int chunkZ)
 {
+    float scale = 0.05f;
+    int maxHeight = 16;
+
     for (int x = 0; x < WIDTH; x++)
-        for (int y = 0; y < HEIGHT; y++)
-            for (int z = 0; z < DEPTH; z++)
+        for (int z = 0; z < DEPTH; z++)
+        {
+            // World space position (important for consistent terrain across chunks)
+            int worldX = x + chunkX * WIDTH;
+            int worldZ = z + chunkZ * DEPTH;
+
+            float noiseVal = stb_perlin_noise3(worldX * scale, 0.0f, worldZ * scale, 0, 0, 0);
+            noiseVal = (noiseVal + 1.0f) / 2.0f; // Normalize from [-1,1] to [0,1]
+            int height = static_cast<int>(noiseVal * maxHeight);
+
+            for (int y = 0; y < HEIGHT; y++)
             {
-                int index = x + WIDTH * (y + DEPTH * z);
-                if (y < Dirt_StopY - 1)
+                int index = x + WIDTH * (y + HEIGHT * z);
+
+                if (y < height - 1)
                     chunk[index] = Dirt;
-                else if (y == Dirt_StopY - 1)
+                else if (y == height - 1)
                     chunk[index] = Grass;
                 else
                     chunk[index] = Air;
             }
+        }
 }
 
 Chunk::~Chunk() {};
@@ -157,12 +171,12 @@ ChunkManager::ChunkManager(int renderDist) { chunks.reserve(renderDist); };
 
 ChunkManager::~ChunkManager() {};
 
-void ChunkManager::initChunk(Texture& tex, int chunkX, int chunkZ, int Dirt_StopY) {
+void ChunkManager::initChunk(Texture& tex, int chunkX, int chunkZ) {
     ChunkCoord coord{ chunkX, chunkZ };
 
     if (chunks.find(coord) != chunks.end()) return; // no overwriting prev chunks
 
-    Chunk chunk(Dirt_StopY);
+    Chunk chunk(chunkX, chunkZ);
     chunk.BuildChunkMesh(tex);
     chunks.emplace(coord, std::move(chunk));
 }

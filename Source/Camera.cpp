@@ -23,9 +23,9 @@ void Camera::Matrix(Shader& shader, const char* uniform)
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, uniform), 1, GL_FALSE, glm::value_ptr(cameraMatrix));
 }
 
-void Camera::Inputs(GLFWwindow* window, float dt)
+void Camera::Inputs(GLFWwindow* window)
 {
-    float camSpeed = speed * 10.f * dt;
+    float camSpeed = speed * 10.f * global::deltaTime;
 
     // Toggle camera mode on F4 
     if (glfwGetKey(window, GLFW_KEY_F4) == GLFW_PRESS && !f4PressedLastFrame)
@@ -37,6 +37,8 @@ void Camera::Inputs(GLFWwindow* window, float dt)
     {
         f4PressedLastFrame = false;
     }
+
+    if (global::fullscreen) cameraControlActive = true;
 
     // Movement control
     if (cameraControlActive || glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)

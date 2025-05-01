@@ -4,6 +4,9 @@
 #define CHUNK_H
 
 #include "../Headers/Mesh.h"
+
+#include "stb/stb_perlin.h""
+
 #include <vector>
 #include <unordered_map>
 
@@ -22,7 +25,7 @@ class Chunk {
 public:
 	Mesh chunkMesh;
 
-	Chunk(int Dirt_StopY); // Ctor
+	Chunk(int chunkX, int chunkZ); // Ctor
 	~Chunk(); //Dtor
 
 	BlockType getBlock(int x, int y, int z) const;
@@ -58,7 +61,7 @@ public:
 	ChunkManager(int renderDist);
 	~ChunkManager();
 
-	void initChunk(Texture& tex, int chunkX, int chunkZ, int Dirt_StopY);
+	void initChunk(Texture& tex, int chunkX, int chunkZ);
 
 	const std::unordered_map<ChunkCoord, Chunk>& getChunks() const;
 };
