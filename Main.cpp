@@ -42,7 +42,7 @@ namespace {
     bool ShowChunkBorder = false;
     bool f3Pressed = false;
 
-    const int renderDistance = 8; // means player on current chunk +x chunk ard him
+    const int renderDistance = 16; // means player on current chunk +x chunk ard him
     const int dirtHeight = 10;
     const float effectiveRadius = renderDistance + 0.5f; // idk why adding 0.5f makes it a normal circle lmao
     const float squareness = 1.2f;  // > 1 makes corners rounder, <= 1 makes more square
@@ -72,7 +72,7 @@ int main()
     }
     gladLoadGL();
 
-    glViewport(0, 0, width, height);
+    glViewport(0, 0, width, height); // world
 
     std::vector<Texture> textures;
     textures.emplace_back("../Resources/Textures/grassAtlas2.png", "diffuse", 0, GL_RGBA, GL_UNSIGNED_BYTE);
@@ -140,12 +140,27 @@ int main()
 
         shaderProgram.Activate();
 
-        for (const auto& pair : chunkMgr.getChunks()) {
+        std::array<glm::vec4, 6> frustumPlane = camera.getFrustumPlanes();
+
+        int renderedchunks = 0;
+        int totalchunks = 0;
+
+        for (const auto& pair : chunkMgr.getChunks()) { // somehow auto here gives me more fps
             ChunkCoord coord = pair.first;
             Chunk chunk = pair.second;
 
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, glm::vec3(coord.x * WIDTH * scale, 0.0f, coord.z * DEPTH * scale)); // position in world
+            glm::vec3 worldPos = glm::vec3(coord.x * WIDTH * scale, 0.0f, coord.z * DEPTH * scale);
+            glm::vec3 aabbMin = worldPos;
+            glm::vec3 aabbMax = worldPos + glm::vec3(WIDTH * scale, HEIGHT * scale, DEPTH * scale);
+
+            totalchunks++;
+
+            if (!AABBInFrustum(frustumPlane, aabbMin, aabbMax))
+                continue; // Skip rendering
+
+            renderedchunks++;
+
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), worldPos);
 
             glUniformMatrix4fv(glGetUniformLocation(shaderProgram.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
             glUniform4f(glGetUniformLocation(shaderProgram.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
@@ -155,8 +170,9 @@ int main()
             chunk.chunkMesh.Draw(shaderProgram, camera);
             
             if(ShowChunkBorder)
-                DrawChunkBorder(glm::vec3(coord.x * WIDTH, 0, coord.z * DEPTH), WIDTH, HEIGHT, DEPTH, camera, shaderProgram);
+                DrawChunkBorder(WIDTH, HEIGHT, DEPTH);
         }
+        std::cout << "Rendered: " << renderedchunks << " / " << totalchunks << " chunks" << std::endl;
 
         light.Draw(lightShader, camera);
 

@@ -27,7 +27,7 @@ void processInput(GLFWwindow* window, float& inner_scale, bool& ShowChunkBorder,
     }
 }
 
-void DrawChunkBorder(const glm::vec3& position, float width, float height, float depth, Camera& camera, Shader& shaderProgram) {
+void DrawChunkBorder(float width, float height, float depth) {
     float w = width;
     float h = height;
     float d = depth;
@@ -60,11 +60,27 @@ void DrawChunkBorder(const glm::vec3& position, float width, float height, float
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glDrawElements(GL_LINES, indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_LINES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
 
     glBindVertexArray(0);
     glDeleteBuffers(1, &vbo);
     glDeleteBuffers(1, &ebo);
     glDeleteVertexArrays(1, &vao);
+}
+
+bool AABBInFrustum(const std::array<glm::vec4, 6>& planes, glm::vec3 min, glm::vec3 max) {
+    for (const auto& plane : planes) {
+        glm::vec3 normal = glm::vec3(plane);
+        glm::vec3 p = min;
+
+        if (normal.x >= 0) p.x = max.x;
+        if (normal.y >= 0) p.y = max.y;
+        if (normal.z >= 0) p.z = max.z;
+
+        if (glm::dot(normal, p) + plane.w < 0) {
+            return false; // Outside
+        }
+    }
+    return true; // Inside
 }
 

@@ -112,6 +112,9 @@ void Chunk::BuildChunkMesh(Texture& atlasTexture)
     std::vector<GLuint> inds;
     GLuint indexOffset = 0;
 
+    verts.reserve(98304); // 4 vert per face × 3 face × 8192 blocks = 98,304
+    inds.reserve(147456); // 6 ind per face  × 3 face × 8192 blocks = 147,456
+
     glm::vec3 frontFace[] = { {0,0,1}, {0,1,1}, {1,1,1}, {1,0,1} };
     glm::vec3 backFace[] = { {1,0,0}, {1,1,0}, {0,1,0}, {0,0,0} };
     glm::vec3 leftFace[] = { {0,0,0}, {0,1,0}, {0,1,1}, {0,0,1} };
@@ -157,8 +160,7 @@ ChunkManager::~ChunkManager() {};
 void ChunkManager::initChunk(Texture& tex, int chunkX, int chunkZ, int Dirt_StopY) {
     ChunkCoord coord{ chunkX, chunkZ };
 
-    // Prevent overwriting existing chunks
-    if (chunks.find(coord) != chunks.end()) return;
+    if (chunks.find(coord) != chunks.end()) return; // no overwriting prev chunks
 
     Chunk chunk(Dirt_StopY);
     chunk.BuildChunkMesh(tex);

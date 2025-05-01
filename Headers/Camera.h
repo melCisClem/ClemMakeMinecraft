@@ -12,6 +12,7 @@
 #include<glm/gtx/vector_angle.hpp>
 
 #include"shaderClass.h"
+#include<array>
 
 class Camera
 {
@@ -37,5 +38,6 @@ public:
 	void Matrix(Shader& shader, const char* uniform);
 
 	void Inputs(GLFWwindow* window, float dt);
+	std::array<glm::vec4, 6> getFrustumPlanes() const;
 };
 #endif

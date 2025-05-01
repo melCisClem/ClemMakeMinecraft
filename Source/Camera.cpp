@@ -80,3 +80,47 @@ void Camera::Inputs(GLFWwindow* window, float dt)
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) speed = 3.f; // basically 3X the normal speed
     else if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_RELEASE) speed = 1.f;
 }
+
+std::array<glm::vec4, 6> Camera::getFrustumPlanes() const {
+    std::array<glm::vec4, 6> planes;
+    glm::mat4 matrix = cameraMatrix;
+
+    // Left
+    planes[0] = glm::vec4(matrix[0][3] + matrix[0][0],
+        matrix[1][3] + matrix[1][0],
+        matrix[2][3] + matrix[2][0],
+        matrix[3][3] + matrix[3][0]);
+    // Right
+    planes[1] = glm::vec4(matrix[0][3] - matrix[0][0],
+        matrix[1][3] - matrix[1][0],
+        matrix[2][3] - matrix[2][0],
+        matrix[3][3] - matrix[3][0]);
+    // Bottom
+    planes[2] = glm::vec4(matrix[0][3] + matrix[0][1],
+        matrix[1][3] + matrix[1][1],
+        matrix[2][3] + matrix[2][1],
+        matrix[3][3] + matrix[3][1]);
+    // Top
+    planes[3] = glm::vec4(matrix[0][3] - matrix[0][1],
+        matrix[1][3] - matrix[1][1],
+        matrix[2][3] - matrix[2][1],
+        matrix[3][3] - matrix[3][1]);
+    // Near
+    planes[4] = glm::vec4(matrix[0][3] + matrix[0][2],
+        matrix[1][3] + matrix[1][2],
+        matrix[2][3] + matrix[2][2],
+        matrix[3][3] + matrix[3][2]);
+    // Far
+    planes[5] = glm::vec4(matrix[0][3] - matrix[0][2],
+        matrix[1][3] - matrix[1][2],
+        matrix[2][3] - matrix[2][2],
+        matrix[3][3] - matrix[3][2]);
+
+    // Normalize
+    for (auto& plane : planes) {
+        float length = glm::length(glm::vec3(plane));
+        plane /= length;
+    }
+
+    return planes;
+}
