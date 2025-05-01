@@ -19,7 +19,6 @@ static const int CHUNK_SIZE = WIDTH * HEIGHT * DEPTH;
 enum BlockType { Air = 0, Dirt, Grass };
 
 class Chunk {
-	int Dirt_StopY; // where dirt stops and air starts
 	BlockType chunk[CHUNK_SIZE]; // index = x + WIDTH * (y + HEIGHT * z)
 
 public:
