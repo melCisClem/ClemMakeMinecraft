@@ -21,7 +21,7 @@ namespace global {
     extern bool fullscreen = false;
     extern bool f11Pressed = false;
 
-    extern int renderDistance = 8; // means player on current chunk +a chunk ard him
+    extern int renderDistance = 16; // means player on current chunk +a chunk ard him
     extern float effectiveRadius = renderDistance + 0.5f; // idk why adding 0.5f makes it a normal circle lmao
     extern float squareness = 1.2f;  // > 1 makes corners rounder, <= 1 makes more square
 
