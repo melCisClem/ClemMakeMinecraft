@@ -5,7 +5,7 @@
 
 #include "../Headers/Mesh.h"
 
-#include "stb/stb_perlin.h""
+#include "stb/stb_perlin.h"
 
 #include <vector>
 #include <unordered_map>
@@ -16,7 +16,7 @@ static const int DEPTH = 16; // z
 
 static const int CHUNK_SIZE = WIDTH * HEIGHT * DEPTH;
 
-enum BlockType { Air = 0, Dirt, Grass };
+enum BlockType { Air = 0, Dirt, Grass, Water};
 
 class Chunk {
 	BlockType chunk[CHUNK_SIZE]; // index = x + WIDTH * (y + HEIGHT * z)
@@ -25,8 +25,9 @@ public:
 	Mesh chunkMesh;
 
 	Chunk(int chunkX, int chunkZ); // Ctor
-	~Chunk(); //Dtor
+	~Chunk(); // Dtor
 
+	float getPerlinHeight(int x, int z) const;
 	BlockType getBlock(int x, int y, int z) const;
 	void setBlock(int x, int y, int z, BlockType type);
 

@@ -3,8 +3,8 @@
 
 Chunk::Chunk(int chunkX, int chunkZ)
 {
-    float scale = 0.05f;
-    int maxHeight = 16;
+    //float scale = 0.05f;
+    //int maxHeight = 16;
 
     for (int x = 0; x < WIDTH; x++)
         for (int z = 0; z < DEPTH; z++)
@@ -12,10 +12,10 @@ Chunk::Chunk(int chunkX, int chunkZ)
             // World space position (important for consistent terrain across chunks)
             int worldX = x + chunkX * WIDTH;
             int worldZ = z + chunkZ * DEPTH;
-
-            float noiseVal = stb_perlin_noise3(worldX * scale, 0.0f, worldZ * scale, 0, 0, 0);
-            noiseVal = (noiseVal + 1.0f) / 2.0f; // Normalize from [-1,1] to [0,1]
-            int height = static_cast<int>(noiseVal * maxHeight);
+            
+            //int height = static_cast<int>(getPerlinHeight(worldX * scale, worldZ * scale) * maxHeight); // look like mountain side lmao
+            //int height = static_cast<int>(getPerlinHeight(worldX, worldZ) * maxHeight); // looks like valleys?
+            int height = static_cast<int>(getPerlinHeight(worldX, worldZ));
 
             for (int y = 0; y < HEIGHT; y++)
             {
@@ -25,6 +25,8 @@ Chunk::Chunk(int chunkX, int chunkZ)
                     chunk[index] = Dirt;
                 else if (y == height - 1)
                     chunk[index] = Grass;
+                else if (y <= 0) // 0 is placeholder
+                    chunk[index] = Water;
                 else
                     chunk[index] = Air;
             }
@@ -32,6 +34,30 @@ Chunk::Chunk(int chunkX, int chunkZ)
 }
 
 Chunk::~Chunk() {};
+
+float Chunk::getPerlinHeight(int x, int z) const
+{
+    float total = 1.0f; // final terrain height
+    float frequency = 0.01f; // controls how zoomed in the noise is - Low = smooth | High = noisy
+    float amplitude = 15.0f; // controls how strong noise layer is
+
+    float persistence = 0.5f; // reduces amp with each layer
+    float lacunarity = 2.0f; // increases freq with each layer
+
+    // 3 layers of noise with different offsets
+    for (int i = 0; i < 3; i++) {
+        float nx = x * frequency + i * 100; 
+        float nz = z * frequency + i * 100; // these 2 lines creates layers
+
+        float noiseVal = stb_perlin_noise3_seed(nx, nz, 0.0f, 0, 0, 0, global::seed);
+        total += noiseVal * amplitude;
+
+        frequency *= lacunarity;
+        amplitude *= persistence;
+    }
+
+    return total;
+}
 
 BlockType Chunk::getBlock(int x, int y, int z) const 
 {
@@ -72,6 +98,10 @@ glm::vec2 Chunk::GetUV(BlockType type, int face, int cornerX, int cornerY)
         tile = { 5, 0 }; // dirt
         break;
 
+    case Water:
+        tile = { 6, 0 };  // watah
+        break;
+
     default:
         tile = { 0, 0 }; // Air 
         break;
@@ -79,7 +109,7 @@ glm::vec2 Chunk::GetUV(BlockType type, int face, int cornerX, int cornerY)
 
     const float padding = 0.002f;
 
-    float atlasTilesX = 6.0f; // amt of tiles horizontally
+    float atlasTilesX = 7.0f; // amt of tiles horizontally
     float atlasTilesY = 1.0f; // amt of tiles vertically
 
     float tileSizeX = 1.0f / atlasTilesX;

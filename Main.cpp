@@ -65,7 +65,7 @@ int main()
     glViewport(0, 0, global::width, global::height); // world
 
     std::vector<Texture> textures;
-    textures.emplace_back("../Resources/Textures/grassAtlas2.png", "diffuse", 0, GL_RGBA, GL_UNSIGNED_BYTE);
+    textures.emplace_back("../Resources/Textures/atlasTest.png", "diffuse", 0, GL_RGBA, GL_UNSIGNED_BYTE);
 
     Shader shaderProgram("../Resources/Shaders/default.vert", "../Resources/Shaders/default.frag");
     Shader lightShader("../Resources/Shaders/light.vert", "../Resources/Shaders/light.frag");

@@ -7,6 +7,8 @@ namespace global {
     extern int width;
     extern int height;
 
+    extern int seed;
+
     extern int windowed_x;
     extern int windowed_y;
     extern int windowed_width;
