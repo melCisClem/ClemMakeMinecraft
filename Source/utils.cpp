@@ -25,6 +25,16 @@ void processInput(GLFWwindow* window)
     else {
         global::f3Pressed = false;
     }
+
+    float speed = 0.1f;
+    if (glfwGetKey(window, GLFW_KEY_J))
+        global::sunX -= speed;
+    if (glfwGetKey(window, GLFW_KEY_L))
+        global::sunX += speed;
+    if (glfwGetKey(window, GLFW_KEY_I))
+        global::sunZ -= speed;
+    if (glfwGetKey(window, GLFW_KEY_K))
+        global::sunZ += speed;
 }
 
 void toggleFullscreen(GLFWwindow* window)

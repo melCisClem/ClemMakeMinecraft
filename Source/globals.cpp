@@ -10,6 +10,10 @@ namespace global {
     extern int windowed_x = 100, windowed_y = 100;
     extern int windowed_width = width, windowed_height = height;
 
+    extern float sunX = 10.f;
+    extern float sunY = 10.f;
+    extern float sunZ = 10.f;
+
     extern float scale = 0.25f;
 
     extern float deltaTime = 0.0f;

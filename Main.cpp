@@ -71,11 +71,6 @@ int main()
     Shader lightShader("../Resources/Shaders/light.vert", "../Resources/Shaders/light.frag");
     Mesh light(lightVertices, lightIndices, textures);
 
-    glm::vec4 lightColor = glm::vec4(1.f, 1.f, 1.f, 1.f);
-    glm::vec3 lightPos = glm::vec3(10.f, 10.f, 10.f);
-    glm::mat4 lightModel = glm::mat4(1.f);
-    lightModel = glm::translate(lightModel, lightPos);
-
     glEnable(GL_DEPTH_TEST);
 
     glEnable(GL_CULL_FACE);
@@ -115,6 +110,11 @@ int main()
 
         processInput(window);
         toggleFullscreen(window);
+
+        glm::vec4 lightColor = glm::vec4(1.f, 1.f, 1.f, 1.f);
+        glm::vec3 lightPos = glm::vec3(global::sunX, global::sunY, global::sunZ);
+        glm::mat4 lightModel = glm::mat4(1.f);
+        lightModel = glm::translate(lightModel, lightPos);
 
         glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
         //glClearColor(0.07f, 0.13f, 0.17f, 1.0f); // dark gloomy black

@@ -14,6 +14,10 @@ namespace global {
     extern int windowed_width;
     extern int windowed_height;
 
+    extern float sunX;
+    extern float sunY;
+    extern float sunZ;
+
     extern float scale;
 
     extern float deltaTime;
