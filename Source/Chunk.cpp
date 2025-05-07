@@ -3,6 +3,7 @@
 
 Chunk::Chunk(int chunkX, int chunkZ)
 {
+    chunk.resize(CHUNK_SIZE);
     //float scale = 0.05f;
     //int maxHeight = 16;
 
@@ -19,7 +20,7 @@ Chunk::Chunk(int chunkX, int chunkZ)
 
             for (int y = 0; y < HEIGHT; y++)
             {
-                int index = x + WIDTH * (y + HEIGHT * z);
+                int index = getIndex(x, y, z);
 
                 if (y < height - 1)
                     chunk[index] = Dirt;
@@ -38,8 +39,8 @@ Chunk::~Chunk() {};
 float Chunk::getPerlinHeight(int x, int z) const
 {
     float total = 1.0f; // final terrain height
-    float frequency = 0.01f; // controls how zoomed in the noise is - Low = smooth | High = noisy
-    float amplitude = 15.0f; // controls how strong noise layer is
+    float frequency = 0.008f; // controls how zoomed in the noise is - Low = smooth | High = noisy
+    float amplitude = 30.0f; // controls how strong noise layer is
 
     float persistence = 0.5f; // reduces amp with each layer
     float lacunarity = 2.0f; // increases freq with each layer
@@ -61,19 +62,23 @@ float Chunk::getPerlinHeight(int x, int z) const
 
 BlockType Chunk::getBlock(int x, int y, int z) const 
 {
-    return chunk[x + WIDTH * (y + HEIGHT * z)];
+    return chunk[getIndex(x, y, z)];
 }
 
 void Chunk::setBlock(int x, int y, int z, BlockType type) 
 {
-    chunk[x + WIDTH * (y + HEIGHT * z)] = type;
+    chunk[getIndex(x, y, z)] = type;
+}
+
+int Chunk::getIndex(int x, int y, int z) const {
+    return x + WIDTH * (z + DEPTH * y);
 }
 
 bool Chunk::isAir(int x, int y, int z)
 {
     if (x < 0 || y < 0 || z < 0 || x >= WIDTH || y >= HEIGHT || z >= DEPTH)
         return true;
-    return chunk[x + WIDTH * (y + DEPTH * z)] == Air;
+    return chunk[getIndex(x, y, z)] == Air;
 }
 
 glm::vec2 Chunk::GetUV(BlockType type, int face, int cornerX, int cornerY)
@@ -156,8 +161,8 @@ void Chunk::BuildChunkMesh(Texture& atlasTexture)
     std::vector<GLuint> inds;
     GLuint indexOffset = 0;
 
-    verts.reserve(98304); // 4 vert per face × 3 face × 8192 blocks = 98,304
-    inds.reserve(147456); // 6 ind per face  × 3 face × 8192 blocks = 147,456
+    verts.reserve(4 * 3 * CHUNK_SIZE); // 4 vert per face × 3 face × no. blocks 
+    inds.reserve(6 * 3 * CHUNK_SIZE); // 6 ind per face  × 3 face × no. blocks 
 
     glm::vec3 frontFace[] = { {0,0,1}, {0,1,1}, {1,1,1}, {1,0,1} };
     glm::vec3 backFace[] = { {1,0,0}, {1,1,0}, {0,1,0}, {0,0,0} };
@@ -170,7 +175,7 @@ void Chunk::BuildChunkMesh(Texture& atlasTexture)
         for (int y = 0; y < HEIGHT; y++)
             for (int z = 0; z < DEPTH; z++)
             {
-                int index = x + WIDTH * (y + HEIGHT * z);
+                int index = getIndex(x, y, z);
                 BlockType type = chunk[index];
                 if (type == Air) continue;
 

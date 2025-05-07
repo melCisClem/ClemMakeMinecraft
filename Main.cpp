@@ -133,8 +133,8 @@ int main()
 
         std::array<glm::vec4, 6> frustumPlane = camera.getFrustumPlanes();
 
-        int renderedchunks = 0;
-        int totalchunks = 0;
+        //int renderedchunks = 0;
+        //int totalchunks = 0;
 
         // std::pair<ChunkCoord, Chunk> gives 120-130 auto gives 170-190 at RenderDist 8
         for (const auto& pair : chunkMgr.getChunks()) { // somehow auto here gives me more fps idk
@@ -145,12 +145,12 @@ int main()
             glm::vec3 aabbMin = worldPos;
             glm::vec3 aabbMax = worldPos + glm::vec3(WIDTH * global::scale, HEIGHT * global::scale, DEPTH * global::scale);
 
-            totalchunks++;
+            //totalchunks++;
 
             if (!AABBInFrustum(frustumPlane, aabbMin, aabbMax))
                 continue; // Skip rendering
 
-            renderedchunks++;
+            //renderedchunks++;
 
             glm::mat4 model = glm::translate(glm::mat4(1.0f), worldPos);
 
@@ -164,7 +164,7 @@ int main()
             if(global::ShowChunkBorder)
                 DrawChunkBorder(WIDTH, HEIGHT, DEPTH);
         }
-        std::cout << "Rendered: " << renderedchunks << " / " << totalchunks << " chunks" << std::endl;
+        //std::cout << "Rendered: " << renderedchunks << " / " << totalchunks << " chunks" << std::endl;
 
         light.Draw(lightShader, camera);
 

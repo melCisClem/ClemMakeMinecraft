@@ -11,7 +11,7 @@
 #include <unordered_map>
 
 static const int WIDTH = 16; // x
-static const int HEIGHT = 16; // y
+static const int HEIGHT = 32; // y world build height
 static const int DEPTH = 16; // z
 
 static const int CHUNK_SIZE = WIDTH * HEIGHT * DEPTH;
@@ -19,10 +19,10 @@ static const int CHUNK_SIZE = WIDTH * HEIGHT * DEPTH;
 enum BlockType { Air = 0, Dirt, Grass, Water};
 
 class Chunk {
-	BlockType chunk[CHUNK_SIZE]; // index = x + WIDTH * (y + HEIGHT * z)
+	std::vector<BlockType> chunk; // index = x + WIDTH * (z + DEPTH * y); // x -> z -> y (y is outermost)
 
 public:
-	Mesh chunkMesh;
+	Mesh chunkMesh; // this cause of stack overflow
 
 	Chunk(int chunkX, int chunkZ); // Ctor
 	~Chunk(); // Dtor
@@ -30,6 +30,7 @@ public:
 	float getPerlinHeight(int x, int z) const;
 	BlockType getBlock(int x, int y, int z) const;
 	void setBlock(int x, int y, int z, BlockType type);
+	int getIndex(int x, int y, int z) const;
 
 	bool isAir(int x, int y, int z);
 	glm::vec2 GetUV(BlockType type, int face, int cornerX, int cornerY);
