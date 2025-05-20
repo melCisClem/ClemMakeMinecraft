@@ -199,7 +199,6 @@ void Chunk::BuildChunkMesh(Texture& atlasTexture)
     chunkMesh = Mesh(verts, inds, textures);
 }
 
-
 ChunkManager::ChunkManager() { chunks.reserve(16); }
 
 ChunkManager::ChunkManager(int renderDist) { chunks.reserve(renderDist); };
@@ -217,4 +216,7 @@ void ChunkManager::initChunk(Texture& tex, int chunkX, int chunkZ) {
 }
 
 const std::unordered_map<ChunkCoord, Chunk>& ChunkManager::getChunks() const { return chunks; }
+
+const unsigned int ChunkManager::size() const { return chunks.size(); }
+
 

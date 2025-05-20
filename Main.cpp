@@ -69,6 +69,8 @@ int main()
 
     Shader shaderProgram("../Resources/Shaders/default.vert", "../Resources/Shaders/default.frag");
     Shader lightShader("../Resources/Shaders/light.vert", "../Resources/Shaders/light.frag");
+    Shader instanceShader("../Resources/Shaders/instance.vert", "../Resources/Shaders/default.frag"); // for instancing
+
     Mesh light(lightVertices, lightIndices, textures);
 
     glEnable(GL_DEPTH_TEST);
@@ -81,6 +83,10 @@ int main()
 
     GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale");
 
+    glm::vec4 lightColor = glm::vec4(1.f, 1.f, 1.f, 1.f);
+    glm::vec3 lightPos = glm::vec3(global::sunX, global::sunY, global::sunZ);
+    glm::mat4 lightModel = glm::mat4(1.f);
+
     ChunkManager chunkMgr;
 
     for (int z = -global::renderDistance; z <= global::renderDistance; ++z)
@@ -88,6 +94,30 @@ int main()
             if ((x * x + z * z) <= (global::effectiveRadius * global::effectiveRadius) / global::squareness)
                 chunkMgr.initChunk(textures[0], x, z);
 
+
+    std::array<glm::vec4, 6> frustumPlane = camera.getFrustumPlanes();
+
+    std::vector<glm::mat4> instanceMatrices;
+    for (const auto& pair : chunkMgr.getChunks()) {
+        const ChunkCoord& coord = pair.first;
+        const Chunk& chunk = pair.second;
+
+        glm::vec3 worldPos = glm::vec3(coord.x * WIDTH * global::scale, 0.0f, coord.z * DEPTH * global::scale);
+        glm::vec3 aabbMin = worldPos;
+        glm::vec3 aabbMax = worldPos + glm::vec3(WIDTH * global::scale, HEIGHT * global::scale, DEPTH * global::scale);
+
+        if (!AABBInFrustum(frustumPlane, aabbMin, aabbMax))
+            continue; // Skip rendering
+
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(coord.x * WIDTH, 0, coord.z * DEPTH));
+
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        glUniform4f(glGetUniformLocation(shaderProgram.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
+        glUniform3f(glGetUniformLocation(shaderProgram.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
+        glUniform1f(uniID, global::scale);
+
+        instanceMatrices.push_back(model);
+    }
 
     while (!glfwWindowShouldClose(window)) // start of game loop
     {
@@ -111,9 +141,6 @@ int main()
         processInput(window);
         toggleFullscreen(window);
 
-        glm::vec4 lightColor = glm::vec4(1.f, 1.f, 1.f, 1.f);
-        glm::vec3 lightPos = glm::vec3(global::sunX, global::sunY, global::sunZ);
-        glm::mat4 lightModel = glm::mat4(1.f);
         lightModel = glm::translate(lightModel, lightPos);
 
         glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
@@ -129,8 +156,13 @@ int main()
         glUniformMatrix4fv(glGetUniformLocation(lightShader.ID, "model"), 1, GL_FALSE, glm::value_ptr(lightModel));
         glUniform4f(glGetUniformLocation(lightShader.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
 
+        instanceShader.Activate();
+        glUniform4f(glGetUniformLocation(instanceShader.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
+        glUniform3f(glGetUniformLocation(instanceShader.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
+
         shaderProgram.Activate();
 
+        /*
         std::array<glm::vec4, 6> frustumPlane = camera.getFrustumPlanes();
 
         //int renderedchunks = 0;
@@ -165,6 +197,9 @@ int main()
                 DrawChunkBorder(WIDTH, HEIGHT, DEPTH);
         }
         //std::cout << "Rendered: " << renderedchunks << " / " << totalchunks << " chunks" << std::endl;
+        */
+        
+        
 
         light.Draw(lightShader, camera);
 

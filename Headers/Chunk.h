@@ -39,7 +39,7 @@ public:
 };
 
 struct ChunkCoord {
-	int x, z;
+	int x, z; // no y cos chunk height is controlled by perlin
 
 	bool operator==(const ChunkCoord& other) const {
 		return x == other.x && z == other.z;
@@ -58,6 +58,8 @@ namespace std {
 class ChunkManager {
 	std::unordered_map<ChunkCoord, Chunk> chunks;
 public:
+	Mesh baseChunkMesh; // for instancing
+
 	ChunkManager();
 	ChunkManager(int renderDist);
 	~ChunkManager();
@@ -65,6 +67,7 @@ public:
 	void initChunk(Texture& tex, int chunkX, int chunkZ);
 
 	const std::unordered_map<ChunkCoord, Chunk>& getChunks() const;
+	const unsigned int size() const;
 };
 
 #endif

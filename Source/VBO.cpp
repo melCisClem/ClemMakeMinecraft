@@ -14,6 +14,13 @@ VBO::VBO(const void* data, GLsizeiptr size)
 	glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
 }
 
+VBO::VBO(std::vector<glm::mat4>& mat4s)
+{
+	glGenBuffers(1, &ID);
+	glBindBuffer(GL_ARRAY_BUFFER, ID);
+	glBufferData(GL_ARRAY_BUFFER, mat4s.size() * sizeof(glm::mat4), mat4s.data(), GL_STATIC_DRAW);
+}
+
 
 void VBO::Bind()
 {

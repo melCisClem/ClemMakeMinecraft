@@ -21,6 +21,7 @@ public:
 	GLuint ID;
 	VBO(std::vector<Vertex>& vertices); 
 	VBO(const void* data, GLsizeiptr size); // overload
+	VBO(std::vector<glm::mat4>& mat4s); // for instancing
 
 	void Bind();
 	void Unbind();
