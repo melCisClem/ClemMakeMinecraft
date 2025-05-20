@@ -58,7 +58,6 @@ namespace std {
 class ChunkManager {
 	std::unordered_map<ChunkCoord, Chunk> chunks;
 public:
-	Mesh baseChunkMesh; // for instancing
 
 	ChunkManager();
 	ChunkManager(int renderDist);

@@ -95,30 +95,6 @@ int main()
                 chunkMgr.initChunk(textures[0], x, z);
 
 
-    std::array<glm::vec4, 6> frustumPlane = camera.getFrustumPlanes();
-
-    std::vector<glm::mat4> instanceMatrices;
-    for (const auto& pair : chunkMgr.getChunks()) {
-        const ChunkCoord& coord = pair.first;
-        const Chunk& chunk = pair.second;
-
-        glm::vec3 worldPos = glm::vec3(coord.x * WIDTH * global::scale, 0.0f, coord.z * DEPTH * global::scale);
-        glm::vec3 aabbMin = worldPos;
-        glm::vec3 aabbMax = worldPos + glm::vec3(WIDTH * global::scale, HEIGHT * global::scale, DEPTH * global::scale);
-
-        if (!AABBInFrustum(frustumPlane, aabbMin, aabbMax))
-            continue; // Skip rendering
-
-        glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(coord.x * WIDTH, 0, coord.z * DEPTH));
-
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        glUniform4f(glGetUniformLocation(shaderProgram.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
-        glUniform3f(glGetUniformLocation(shaderProgram.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
-        glUniform1f(uniID, global::scale);
-
-        instanceMatrices.push_back(model);
-    }
-
     while (!glfwWindowShouldClose(window)) // start of game loop
     {
         float currentTime = static_cast<float>(glfwGetTime());
@@ -159,47 +135,43 @@ int main()
         instanceShader.Activate();
         glUniform4f(glGetUniformLocation(instanceShader.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
         glUniform3f(glGetUniformLocation(instanceShader.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
+        glUniform1f(uniID, global::scale);
 
-        shaderProgram.Activate();
-
-        /*
         std::array<glm::vec4, 6> frustumPlane = camera.getFrustumPlanes();
+        std::vector<glm::mat4> instanceMatrices;
 
-        //int renderedchunks = 0;
-        //int totalchunks = 0;
-
-        // std::pair<ChunkCoord, Chunk> gives 120-130 auto gives 170-190 at RenderDist 8
-        for (const auto& pair : chunkMgr.getChunks()) { // somehow auto here gives me more fps idk
-            ChunkCoord coord = pair.first;
-            Chunk chunk = pair.second;
+        for (const auto& pair : chunkMgr.getChunks()) {
+            const ChunkCoord& coord = pair.first;
+            const Chunk& chunk = pair.second;
 
             glm::vec3 worldPos = glm::vec3(coord.x * WIDTH * global::scale, 0.0f, coord.z * DEPTH * global::scale);
             glm::vec3 aabbMin = worldPos;
             glm::vec3 aabbMax = worldPos + glm::vec3(WIDTH * global::scale, HEIGHT * global::scale, DEPTH * global::scale);
 
-            //totalchunks++;
-
             if (!AABBInFrustum(frustumPlane, aabbMin, aabbMax))
                 continue; // Skip rendering
 
-            //renderedchunks++;
-
             glm::mat4 model = glm::translate(glm::mat4(1.0f), worldPos);
+            model = glm::scale(model, glm::vec3(global::scale));
 
-            glUniformMatrix4fv(glGetUniformLocation(shaderProgram.ID, "model"), 1, GL_FALSE, glm::value_ptr(model));
-            glUniform4f(glGetUniformLocation(shaderProgram.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
-            glUniform3f(glGetUniformLocation(shaderProgram.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
-            glUniform1f(uniID, global::scale);
-
-            chunk.chunkMesh.Draw(shaderProgram, camera);
-            
-            if(global::ShowChunkBorder)
-                DrawChunkBorder(WIDTH, HEIGHT, DEPTH);
+            instanceMatrices.push_back(model);
         }
-        //std::cout << "Rendered: " << renderedchunks << " / " << totalchunks << " chunks" << std::endl;
-        */
-        
-        
+
+        // creating the instance mesh  <-- this the reason why all draws the same chunk but idk how fix
+        Chunk firstChunk = chunkMgr.getChunks().begin()->second;
+
+        Mesh instancedChunkMesh(
+            firstChunk.chunkMesh.vertices,
+            firstChunk.chunkMesh.indices,
+            firstChunk.chunkMesh.textures,
+            static_cast<unsigned int>(instanceMatrices.size()),
+            instanceMatrices
+        );
+
+        instancedChunkMesh.UpdateInstances(instanceMatrices);
+        instancedChunkMesh.Draw(instanceShader, camera, glm::mat4(1.0f), glm::vec3(0), glm::quat(), glm::vec3(1.0f));
+
+        shaderProgram.Activate();
 
         light.Draw(lightShader, camera);
 

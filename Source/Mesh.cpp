@@ -11,10 +11,9 @@ Mesh::Mesh(std::vector <Vertex>& vertices, std::vector <GLuint>& indices,std::ve
 	Mesh::indices = indices;
 	Mesh::textures = textures;
 	Mesh::instancing = instancing;
+	Mesh::instanceVBO = VBO(instanceMatrix);
 
 	VAO.Bind();
-
-	VBO instanceVBO(instanceMatrix);
 
 	VBO VBO(vertices);
 	EBO EBO(indices);
@@ -25,7 +24,7 @@ Mesh::Mesh(std::vector <Vertex>& vertices, std::vector <GLuint>& indices,std::ve
 	VAO.LinkAttrib(VBO, 3, 2, GL_FLOAT, sizeof(Vertex), (void*)(9 * sizeof(float)));
 	if (instancing != 1)
 	{
-		instanceVBO.Bind();
+		Mesh::instanceVBO.Bind();
 
 		VAO.LinkAttrib(instanceVBO, 4, 4, GL_FLOAT, sizeof(glm::mat4), (void*)0);
 		VAO.LinkAttrib(instanceVBO, 5, 4, GL_FLOAT, sizeof(glm::mat4), (void*)(1 * sizeof(glm::vec4)));
@@ -86,16 +85,18 @@ void Mesh::Draw(Shader& shader, Camera& camera,
 		glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
 	}
 	else
+	{
+		glUniform1f(glGetUniformLocation(shader.ID, "scale"), scale.x);
 		glDrawElementsInstanced(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0, instancing);
+	}
 	
 }
 
-
-
-void Mesh::DrawInstanced(Shader& shader, Camera& camera, unsigned int count)
+void Mesh::UpdateInstances(const std::vector<glm::mat4>& newInstanceMatrices)
 {
-	shader.Activate();
-	VAO.Bind();
-	camera.Matrix(shader, "camMatrix");
-	glDrawElementsInstanced(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0, count);
+	instancing = static_cast<unsigned int>(newInstanceMatrices.size());
+
+	instanceVBO.Bind();
+	glBufferData(GL_ARRAY_BUFFER, newInstanceMatrices.size() * sizeof(glm::mat4), newInstanceMatrices.data(), GL_DYNAMIC_DRAW);
+	instanceVBO.Unbind();
 }

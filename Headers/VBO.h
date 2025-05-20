@@ -19,6 +19,7 @@ class VBO
 {
 public:
 	GLuint ID;
+	VBO();
 	VBO(std::vector<Vertex>& vertices); 
 	VBO(const void* data, GLsizeiptr size); // overload
 	VBO(std::vector<glm::mat4>& mat4s); // for instancing

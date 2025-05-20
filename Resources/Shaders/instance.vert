@@ -11,17 +11,16 @@ out vec3 Normal;
 out vec3 color;
 out vec2 texCoord;
 
-
 uniform mat4 camMatrix;
-uniform mat4 model;
 uniform float scale;
 
 void main()
 {
-	crntPos = vec3(instanceMatrix * model * vec4(aPos * scale, 1.0f));
-	Normal = mat3(transpose(inverse(model))) * aNormal;
-	color = aColor;
-	texCoord = aTex;
-	
-	gl_Position = camMatrix * vec4(crntPos, 1.0);
+    vec4 worldPos = instanceMatrix * vec4(aPos * scale, 1.0f);
+    crntPos = worldPos.xyz;
+    Normal = mat3(transpose(inverse(mat3(instanceMatrix)))) * aNormal;
+    color = aColor;
+    texCoord = aTex;
+
+    gl_Position = camMatrix * worldPos;
 }

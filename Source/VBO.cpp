@@ -1,5 +1,11 @@
 #include "../Headers/VBO.h"
 
+
+VBO::VBO()
+{
+	glGenVertexArrays(1, &ID);
+}
+
 VBO::VBO(std::vector<Vertex>& vertices)
 {
 	glGenBuffers(1, &ID);
@@ -18,7 +24,7 @@ VBO::VBO(std::vector<glm::mat4>& mat4s)
 {
 	glGenBuffers(1, &ID);
 	glBindBuffer(GL_ARRAY_BUFFER, ID);
-	glBufferData(GL_ARRAY_BUFFER, mat4s.size() * sizeof(glm::mat4), mat4s.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, mat4s.size() * sizeof(glm::mat4), mat4s.data(), GL_DYNAMIC_DRAW);
 }
 
 
