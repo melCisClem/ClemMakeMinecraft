@@ -22,3 +22,6 @@ SOFTWARE.
 
 # ClemTryMinecraft
  me trying to make minecraft
+
+F11 - Fullscreen
+F3  - Show Chunk Border
